@@ -335,11 +335,12 @@ export function scoreJobFitHeuristic(
 
   if (dimensions.titleRelevance >= 60) strengths.push('Role title aligns with background')
 
-  // Build requirement matches
+// Build requirement matches
   const matchedRequirements: RequirementMatch[] = (job.requirements || []).map(req => {
     const reqTokens = tokenize(req)
     let bestEntry: ProfileEntry | null = null
     let bestStrength = 0
+    let bestRawOverlap = 0
 
     for (const entry of profile.entries) {
       const entryTokens = tokenize((entry.bullets || []).join(' ') + ' ' + (entry.skills || []).join(' '))
@@ -347,6 +348,7 @@ export function scoreJobFitHeuristic(
       const weighted = overlap * entry.recencyWeight * 100
       if (weighted > bestStrength) {
         bestStrength = weighted
+        bestRawOverlap = overlap
         bestEntry = entry
       }
     }
@@ -355,8 +357,8 @@ export function scoreJobFitHeuristic(
       requirement: req,
       matched: bestStrength > 20,
       matchedEntryId: bestEntry?.id,
-      matchStrength: Math.round(Math.min(100, bestStrength)),
-      recencyAdjusted: Math.round(Math.min(100, bestStrength * (bestEntry?.recencyWeight ?? 0.5))),
+      matchStrength: Math.round(Math.min(100, bestRawOverlap * 100)),
+      recencyAdjusted: Math.round(Math.min(100, bestStrength)),
       detail: bestEntry
         ? `Matched via ${bestEntry.role} at ${bestEntry.company}`
         : 'No strong match found'

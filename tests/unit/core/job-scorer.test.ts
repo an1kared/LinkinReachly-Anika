@@ -178,6 +178,29 @@ describe('scoreJobFitHeuristic', () => {
     expect(result.overall).toBeGreaterThanOrEqual(0)
     expect(result.overall).toBeLessThanOrEqual(100)
   })
+
+  it('recencyAdjusted never exceeds matchStrength', () => {
+    const result = scoreJobFitHeuristic(profile, makeJob({
+      requirements: ['equity research', 'financial modeling', 'fundraising']
+    }))
+    for (const match of result.matchedRequirements) {
+      expect(match.recencyAdjusted).toBeLessThanOrEqual(match.matchStrength)
+    }
+  })
+
+  it('older strong match has higher matchStrength than recencyAdjusted', () => {
+    // e3 (Equity Research Analyst, recencyWeight=0.35) has high overlap with
+    // 'equity research' and 'financial modeling' — it should show a meaningful
+    // matchStrength but a lower recencyAdjusted, not the other way around
+    const result = scoreJobFitHeuristic(profile, makeJob({
+      requirements: ['equity research', 'financial modeling']
+    }))
+    for (const match of result.matchedRequirements) {
+      if (match.matched) {
+        expect(match.matchStrength).toBeGreaterThanOrEqual(match.recencyAdjusted)
+      }
+    }
+  })
 })
 
 describe('rankJobsByFit', () => {
